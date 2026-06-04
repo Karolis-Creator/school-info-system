@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, School, Key, User, RefreshCw, Check, X } from 'lucide-react';
+import { Plus, School, Key, User, RefreshCw, Check, X, Lock } from 'lucide-react';
 
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

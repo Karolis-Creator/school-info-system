@@ -1,27 +1,57 @@
-// src/hooks/useFirestore.js
 import { useState, useEffect } from 'react';
 import {
-  collection, query, where, orderBy, onSnapshot,
+  collection, query, where, onSnapshot,
   addDoc, updateDoc, deleteDoc, doc, serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
-// Real-time collection listener scoped to a school
+// Real-time collection listener scoped to a school (BE orderBy)
 export function useCollection(collectionName, schoolId, orderField = 'createdAt') {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!schoolId || !collectionName) return;
+    if (!schoolId || !collectionName) {
+      setLoading(false);
+      return;
+    }
+    
+    // Užklausa BE orderBy (kad nereikėtų indeksų)
     const q = query(
       collection(db, collectionName),
-      where('schoolId', '==', schoolId),
-      orderBy(orderField, 'asc')
+      where('schoolId', '==', schoolId)
     );
+    
     const unsub = onSnapshot(q, snap => {
-      setData(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      let results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      // Rūšiavimas atliekamas ČIA, JavaScript pusėje
+      if (orderField) {
+        results = results.sort((a, b) => {
+          let valA = a[orderField];
+          let valB = b[orderField];
+          
+          // Jei tai data - konvertuojame
+          if (orderField === 'date' || orderField === 'createdAt') {
+            valA = valA?.toDate ? valA.toDate() : new Date(valA);
+            valB = valB?.toDate ? valB.toDate() : new Date(valB);
+            return valB - valA; // descending (naujausi viršuje)
+          }
+          
+          // Paprastas rūšiavimas
+          if (valA > valB) return -1;
+          if (valA < valB) return 1;
+          return 0;
+        });
+      }
+      
+      setData(results);
+      setLoading(false);
+    }, (error) => {
+      console.error(`Klaida ${collectionName}:`, error);
       setLoading(false);
     });
+    
     return unsub;
   }, [collectionName, schoolId, orderField]);
 

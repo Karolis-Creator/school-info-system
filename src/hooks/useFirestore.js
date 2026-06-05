@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
-import {
-  collection, query, where, onSnapshot,
-  addDoc, updateDoc, deleteDoc, doc, serverTimestamp
-} from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
-// Real-time collection listener scoped to a school (BE orderBy)
 export function useCollection(collectionName, schoolId, orderField = 'createdAt') {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,29 +12,27 @@ export function useCollection(collectionName, schoolId, orderField = 'createdAt'
       return;
     }
     
-    // Užklausa BE orderBy (kad nereikėtų indeksų)
-    const q = query(
-      collection(db, collectionName),
-      where('schoolId', '==', schoolId)
-    );
+    // JOKIO orderBy Firestore pusėje!!!
+    const q = query(collection(db, collectionName), where('schoolId', '==', schoolId));
     
     const unsub = onSnapshot(q, snap => {
       let results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       
-      // Rūšiavimas atliekamas ČIA, JavaScript pusėje
+      // Rūšiavimas JavaScript pusėje
       if (orderField) {
         results = results.sort((a, b) => {
           let valA = a[orderField];
           let valB = b[orderField];
           
-          // Jei tai data - konvertuojame
-          if (orderField === 'date' || orderField === 'createdAt') {
+          if (orderField === 'date') {
+            return new Date(valB) - new Date(valA);
+          }
+          if (orderField === 'createdAt') {
             valA = valA?.toDate ? valA.toDate() : new Date(valA);
             valB = valB?.toDate ? valB.toDate() : new Date(valB);
-            return valB - valA; // descending (naujausi viršuje)
+            return valB - valA;
           }
           
-          // Paprastas rūšiavimas
           if (valA > valB) return -1;
           if (valA < valB) return 1;
           return 0;
@@ -47,7 +41,7 @@ export function useCollection(collectionName, schoolId, orderField = 'createdAt'
       
       setData(results);
       setLoading(false);
-    }, (error) => {
+    }, error => {
       console.error(`Klaida ${collectionName}:`, error);
       setLoading(false);
     });
@@ -58,7 +52,6 @@ export function useCollection(collectionName, schoolId, orderField = 'createdAt'
   return { data, loading };
 }
 
-// CRUD helpers
 export function useFirestoreCRUD(collectionName, schoolId) {
   async function add(data) {
     return addDoc(collection(db, collectionName), {

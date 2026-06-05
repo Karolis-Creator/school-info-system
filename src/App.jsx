@@ -1,4 +1,3 @@
-// src/App.jsx
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AppLayout from './components/AppLayout';
@@ -9,9 +8,10 @@ import ConsultationsPage from './pages/ConsultationsPage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
 import TeachersPage from './pages/TeachersPage';
 import SuperAdminPage from './pages/SuperAdminPage';
+import AdminPage from './pages/AdminPage';
 
 function ProtectedRoute({ children, requireAdmin, requireSuperAdmin }) {
-  const { user, userData, loading, isAdmin, isSuperAdmin } = useAuth();
+  const { user, loading, isAdmin, isSuperAdmin } = useAuth();
   if (loading) return (
     <div className="full-loading">
       <div className="spinner large" />
@@ -26,11 +26,7 @@ function ProtectedRoute({ children, requireAdmin, requireSuperAdmin }) {
 
 function AuthRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading) return (
-    <div className="full-loading">
-      <div className="spinner large" />
-    </div>
-  );
+  if (loading) return <div className="full-loading"><div className="spinner large" /></div>;
   if (user) return <Navigate to="/" replace />;
   return children;
 }
@@ -48,6 +44,7 @@ function AppRoutes() {
         <Route path="/superadmin" element={
           <ProtectedRoute requireSuperAdmin><SuperAdminPage /></ProtectedRoute>
         } />
+        <Route path="/admin" element={<AdminPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -59,9 +56,3 @@ function App() {
     <AuthProvider>
       <Router>
         <AppRoutes />
-      </Router>
-    </AuthProvider>
-  );
-}
-
-export default App;
